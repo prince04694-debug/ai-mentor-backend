@@ -98,4 +98,26 @@ app.post('/api/ai/vision-solve', async (req, res) => {
 const PORT = 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend Active on http://localhost:${PORT}`);
+});// Add dynamic quiz route to index.js
+app.post('/generate-quiz', async (req, res) => {
+  try {
+    const { topic, subject } = req.body;
+    const prompt = `Generate 3 high-quality competitive exam multiple choice questions for ${subject || 'Science/Math'} on the topic: "${topic}". 
+    Return ONLY a valid JSON array matching this exact format without markdown or backticks:
+    [
+      {
+        "question": "Question text here",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "answer": 0,
+        "explanation": "Detailed step-by-step reason"
+      }
+    ]`;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    res.json(JSON.parse(text));
+  } catch (err) {
+    res.status(500).json({ error: "Failed to generate quiz", details: err.message });
+  }
 });
